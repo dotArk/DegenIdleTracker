@@ -1,40 +1,38 @@
-const DegenUI = (function () {
+const DegenUI = (function() {
     'use strict';
-
+    
     const mod = {};
-    let t = null; // tracker
-    let ov = null; // overlay
+    let t = null;
+    let ov = null;
     let curTab = 'dashboard';
-
-    mod.init = function (tracker) {
+    
+    mod.init = function(tracker) {
         t = tracker;
-
+        
         createOV();
-
+        
         if (t.CFG.uiIntegration) {
             setTimeout(() => createBtn(), 1000);
         } else {
             createFloatBtn();
         }
-
+        
         createTabs();
         setupEvents();
         addStyles();
-
+        
         setInterval(() => {
             if (t.game && t.game.lastUp) {
                 update();
                 updateInd();
             }
         }, 5000);
-
-        t.log('UI ready (passive mode)');
     };
-
+    
     function createOV() {
         const existing = document.getElementById('degen-ov');
         if (existing) existing.remove();
-
+        
         ov = document.createElement('div');
         ov.id = 'degen-ov';
         ov.style.cssText = `
@@ -47,7 +45,7 @@ const DegenUI = (function () {
             box-shadow: 0 8px 32px rgba(0,0,0,0.3);
             backdrop-filter: blur(10px); display: none;
         `;
-
+        
         const tabs = document.createElement('div');
         tabs.id = 'degen-tabs';
         tabs.style.cssText = `
@@ -55,38 +53,38 @@ const DegenUI = (function () {
             margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);
             padding-bottom: 10px;
         `;
-
+        
         ov.appendChild(tabs);
-
+        
         const content = document.createElement('div');
         content.id = 'degen-content';
         ov.appendChild(content);
-
+        
         document.body.appendChild(ov);
     }
-
+    
     function createBtn() {
         const header = document.querySelector('.h-16.px-4.flex.items-center.justify-between');
         if (!header) {
             createFloatBtn();
             return;
         }
-
+        
         const btnCont = header.querySelector('.flex.items-center.space-x-1.md\\:space-x-4');
         if (!btnCont) {
             createFloatBtn();
             return;
         }
-
+        
         const existing = document.getElementById('degen-btn');
         if (existing) existing.remove();
-
+        
         const btn = document.createElement('button');
         btn.id = 'degen-btn';
         btn.type = 'button';
         btn.className = 'bg-[#1E2330] text-[#C5C6C9] px-2 md:px-4 h-10 rounded-lg flex items-center gap-2 hover:bg-[#252B3B] transition-colors cursor-pointer';
-        btn.title = 'Degen Tracker (Passive Mode)';
-
+        btn.title = 'Degen Tracker';
+        
         btn.innerHTML = `
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                 <path d="M3 3v18h18"></path>
@@ -98,7 +96,7 @@ const DegenUI = (function () {
             </svg>
             <span class="hidden md:inline font-medium">Tracker</span>
         `;
-
+        
         const ind = document.createElement('div');
         ind.id = 'degen-ind';
         ind.style.cssText = `
@@ -107,15 +105,15 @@ const DegenUI = (function () {
             background-color: #2ecc71; border: 2px solid #1E2330;
             display: none;
         `;
-
+        
         const wrap = document.createElement('div');
         wrap.className = 'relative';
         wrap.appendChild(btn);
         wrap.appendChild(ind);
-
+        
         const children = btnCont.children;
         let insertBefore = null;
-
+        
         for (let i = 0; i < children.length; i++) {
             const child = children[i];
             if (child.querySelector && child.querySelector('span.font-medium')) {
@@ -123,19 +121,19 @@ const DegenUI = (function () {
                 break;
             }
         }
-
+        
         if (insertBefore) {
             btnCont.insertBefore(wrap, insertBefore);
         } else {
             btnCont.appendChild(wrap);
         }
-
+        
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             mod.toggle();
         });
     }
-
+    
     function createFloatBtn() {
         const btn = document.createElement('button');
         btn.id = 'degen-toggle';
@@ -150,25 +148,25 @@ const DegenUI = (function () {
             display: flex; align-items: center; font-weight: bold;
             transition: transform 0.2s, box-shadow 0.2s;
         `;
-
+        
         btn.addEventListener('mouseover', () => {
             btn.style.transform = 'translateY(-2px)';
             btn.style.boxShadow = '0 6px 16px rgba(0,0,0,0.3)';
         });
-
+        
         btn.addEventListener('mouseout', () => {
             btn.style.transform = 'translateY(0)';
             btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
         });
-
+        
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             mod.toggle();
         });
-
+        
         document.body.appendChild(btn);
     }
-
+    
     function createTabs() {
         const tabs = [
             { id: 'dashboard', name: 'Dashboard', icon: '📊' },
@@ -176,12 +174,12 @@ const DegenUI = (function () {
             { id: 'tasks', name: 'Tasks', icon: '📋' },
             { id: 'debug', name: 'Debug', icon: '🔧' }
         ];
-
+        
         const tabsCont = document.getElementById('degen-tabs');
         if (!tabsCont) return;
-
+        
         tabsCont.innerHTML = '';
-
+        
         tabs.forEach(tab => {
             const btn = document.createElement('button');
             btn.id = `tab-${tab.id}`;
@@ -193,34 +191,34 @@ const DegenUI = (function () {
                 cursor: pointer; font-size: 12px; transition: all 0.3s;
                 display: flex; align-items: center; gap: 5px;
             `;
-
+            
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.degen-tab').forEach(t => {
                     t.style.background = 'transparent';
                     t.style.color = '#95a5a6';
                 });
-
+                
                 btn.style.background = 'rgba(52, 152, 219, 0.2)';
                 btn.style.color = '#3498db';
                 curTab = tab.id;
                 updateTab(tab.id);
             });
-
+            
             tabsCont.appendChild(btn);
         });
-
+        
         setTimeout(() => {
             document.getElementById('tab-dashboard')?.click();
         }, 100);
     }
-
+    
     function updateTab(tabId) {
         const content = document.getElementById('degen-content');
         if (!content) return;
-
+        
         content.innerHTML = '';
-
-        switch (tabId) {
+        
+        switch(tabId) {
             case 'dashboard':
                 content.innerHTML = createDash();
                 break;
@@ -235,12 +233,12 @@ const DegenUI = (function () {
                 break;
         }
     }
-
+    
     function createDash() {
         const g = t.game || {};
         const hasChar = g.char?.name || g.skills?.character_name;
         const hasData = g.api?.calls > 0;
-
+        
         let html = `
             <div style="margin-bottom: 20px;">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
@@ -250,31 +248,28 @@ const DegenUI = (function () {
                 
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; border-left: 4px solid ${hasData ? '#2ecc71' : '#3498db'}; margin-bottom: 15px;">
                     <div style="color: ${hasData ? '#2ecc71' : '#3498db'}; font-weight: bold; margin-bottom: 5px;">
-                        ${hasData ? '✅ PASSIVE MONITORING' : '👀 READY TO MONITOR'}
+                        ${hasData ? '✅ MONITORING' : '👀 READY'}
                     </div>
                     <div style="color: #bdc3c7; font-size: 11px;">
-                        ${hasData
-                ? `Tracking ${g.api.calls} game API calls`
-                : 'Play normally to see data appear'}
-                    </div>
-                    <div style="color: #7f8c8d; font-size: 10px; margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);">
-                        📡 <em>No additional server requests are made</em>
+                        ${hasData 
+                            ? `Tracking ${g.api.calls} calls` 
+                            : 'Play to see data'}
                     </div>
                 </div>
             </div>
             
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
         `;
-
+        
         const stats = [
             { label: 'Character', value: hasChar ? (g.char?.name || g.skills?.character_name) : 'Unknown', color: hasChar ? '#2ecc71' : '#95a5a6', icon: '👤' },
             { label: 'Level', value: g.char?.level || g.skills?.combat || '?', color: '#3498db', icon: '⭐' },
             { label: 'Gold', value: g.char?.gold ? t.fmt(g.char.gold) : '?', color: '#f1c40f', icon: '💰' },
-            { label: 'Active Tasks', value: g.tasks?.length || 0, color: '#9b59b6', icon: '📋' },
+            { label: 'Tasks', value: g.tasks?.length || 0, color: '#9b59b6', icon: '📋' },
             { label: 'API Calls', value: g.api?.calls || 0, color: hasData ? '#2ecc71' : '#95a5a6', icon: '📡' },
-            { label: 'Last Update', value: g.lastUp ? t.timeAgo(g.lastUp) : 'Never', color: '#e74c3c', icon: '🕒' }
+            { label: 'Last', value: g.lastUp ? t.timeAgo(g.lastUp) : 'Never', color: '#e74c3c', icon: '🕒' }
         ];
-
+        
         stats.forEach(s => {
             html += `
                 <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px;">
@@ -286,31 +281,30 @@ const DegenUI = (function () {
                 </div>
             `;
         });
-
+        
         html += `</div>`;
-
+        
         if (!hasData) {
             html += `
                 <div style="background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid #3498db;">
-                    <div style="color: #3498db; font-weight: bold; margin-bottom: 10px;">💡 How It Works</div>
-                    <div style="color: #ecf0f1; font-size: 11px; line-height: 1.5;">
-                        <div style="margin-bottom: 5px;">1. <strong>Play the game normally</strong></div>
-                        <div style="margin-bottom: 5px;">2. <strong>Data appears automatically</strong> as you play</div>
-                        <div style="margin-bottom: 5px;">3. <strong>Zero extra server load</strong> - only reads existing calls</div>
-                        <div>4. <strong>Check back after playing</strong> to see your stats</div>
+                    <div style="color: #3498db; font-weight: bold; margin-bottom: 10px;">No Data Yet</div>
+                    <div style="color: #ecf0f1; font-size: 11px;">
+                        1. Play the game normally<br>
+                        2. Data appears automatically<br>
+                        3. Check back after playing
                     </div>
                 </div>
             `;
         }
-
+        
         return html;
     }
-
+    
     function createChar() {
         const g = t.game || {};
         const char = g.char || {};
         const skills = g.skills || {};
-
+        
         let html = `
             <div style="margin-bottom: 20px;">
                 <h3 style="color: #3498db; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">👤 Character</h3>
@@ -323,7 +317,7 @@ const DegenUI = (function () {
                         <div>
                             <div style="font-size: 18px; color: #ecf0f1; font-weight: bold;">${char.name || 'Unknown'}</div>
                             <div style="font-size: 12px; color: #95a5a6;">
-                                ${char.class ? char.class.charAt(0).toUpperCase() + char.class.slice(1) : 'Unknown Class'}
+                                ${char.class ? char.class.charAt(0).toUpperCase() + char.class.slice(1) : 'Unknown'}
                             </div>
                             <div style="font-size: 11px; color: #3498db; margin-top: 4px;">Level ${char.level || skills.combat || '?'}</div>
                         </div>
@@ -333,30 +327,30 @@ const DegenUI = (function () {
             
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
         `;
-
+        
         const stats = [
             { label: 'Total Level', value: char.total_level || char.level || skills.combat || '?', icon: '⭐' },
             { label: 'Gold', value: char.gold ? t.fmt(char.gold) : '0', icon: '💰' },
             { label: 'Location', value: char.location || 'Unknown', icon: '📍' },
             { label: 'Created', value: char.created_at ? new Date(char.created_at).toLocaleDateString() : '?', icon: '📅' }
         ];
-
+        
         if (skills && Object.keys(skills).length > 0) {
             const skillEntries = Object.entries(skills)
                 .filter(([key, val]) => typeof val === 'number' && !key.includes('character'))
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 2);
-
+            
             skillEntries.forEach(([skill, level], i) => {
                 const skillName = skill.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                stats.push({
-                    label: skillName,
-                    value: t.fmt(level),
-                    icon: i === 0 ? '🏆' : '📊'
+                stats.push({ 
+                    label: skillName, 
+                    value: t.fmt(level), 
+                    icon: i === 0 ? '🏆' : '📊' 
                 });
             });
         }
-
+        
         stats.forEach(s => {
             html += `
                 <div style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 6px;">
@@ -368,36 +362,36 @@ const DegenUI = (function () {
                 </div>
             `;
         });
-
+        
         html += `</div>`;
-
+        
         return html;
     }
-
+    
     function createTasks() {
         const g = t.game || {};
         const tasks = g.tasks || [];
-
+        
         let html = `
             <div style="margin-bottom: 20px;">
                 <h3 style="color: #3498db; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">📋 Tasks</h3>
         `;
-
+        
         if (tasks.length > 0) {
             html += `
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                     <div style="color: #2ecc71; font-weight: bold; margin-bottom: 10px;">Active: ${tasks.length}</div>
                     <div style="display: flex; flex-direction: column; gap: 10px;">
             `;
-
+            
             tasks.forEach((task, i) => {
                 if (!task) return;
-
-                const name = task.description || task.item_name || task.name || `Task ${i + 1}`;
+                
+                const name = task.description || task.item_name || task.name || `Task ${i+1}`;
                 const prog = task.progress || task.current_progress || 0;
                 const target = task.target || task.required || task.quantity || 1;
                 const pct = Math.min(100, (prog / target) * 100);
-
+                
                 html += `
                     <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border-left: 4px solid #3498db;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -412,47 +406,36 @@ const DegenUI = (function () {
                         </div>
                         
                         <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #95a5a6;">
-                            <div>${task.type ? task.type.charAt(0).toUpperCase() + task.type.slice(1) : ''}</div>
+                            <div>${task.type || ''}</div>
                             <div>${task.reward_gold ? `💰 ${t.fmt(task.reward_gold)}` : ''}</div>
                         </div>
                     </div>
                 `;
             });
-
+            
             html += `</div></div>`;
         } else {
             html += `
                 <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px; text-align: center;">
                     <div style="font-size: 48px; margin-bottom: 10px;">📋</div>
-                    <div style="color: #95a5a6; margin-bottom: 10px;">No tasks detected yet</div>
-                    <div style="color: #7f8c8d; font-size: 11px;">
-                        Accept quests in-game to see them here<br>
-                        <small>Data appears as you play</small>
-                    </div>
+                    <div style="color: #95a5a6; margin-bottom: 10px;">No tasks</div>
                 </div>
             `;
         }
-
+        
         return html;
     }
-
+    
     function createDebug() {
         const g = t.game || {};
-
+        
         return `
             <div style="margin-bottom: 20px;">
                 <h3 style="color: #3498db; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">🔧 Debug</h3>
                 
                 <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <div style="color: #3498db; font-weight: bold; margin-bottom: 10px;">📡 Passive Mode Active</div>
-                    <div style="color: #95a5a6; font-size: 11px; margin-bottom: 15px; line-height: 1.5;">
-                        <strong>This tracker makes ZERO API calls</strong><br>
-                        It only reads data that the game fetches naturally.<br>
-                        <em>No additional server load is created.</em>
-                    </div>
-                    
                     <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 15px;">
-                        <button onclick="DegenTracker.data.extractPageData()" style="
+                        <button data-action="extract" style="
                             background: linear-gradient(135deg, #3498db, #2980b9);
                             border: none; color: white; padding: 12px;
                             border-radius: 8px; cursor: pointer; font-weight: bold;
@@ -462,7 +445,7 @@ const DegenUI = (function () {
                             <span>🔍</span> Read Page Data
                         </button>
                         
-                        <button onclick="DegenTracker.api.test()" style="
+                        <button data-action="test" style="
                             background: linear-gradient(135deg, #9b59b6, #8e44ad);
                             border: none; color: white; padding: 12px;
                             border-radius: 8px; cursor: pointer; font-weight: bold;
@@ -471,22 +454,28 @@ const DegenUI = (function () {
                         ">
                             <span>📡</span> Test Interception
                         </button>
-                    </div>
-                    
-                    <div style="color: #7f8c8d; font-size: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);">
-                        💡 <em>Note: These buttons only read existing data, never make new API calls</em>
+                        
+                        <button data-action="clear" style="
+                            background: linear-gradient(135deg, #e74c3c, #c0392b);
+                            border: none; color: white; padding: 12px;
+                            border-radius: 8px; cursor: pointer; font-weight: bold;
+                            font-size: 12px; display: flex; align-items: center;
+                            gap: 10px; justify-content: center;
+                        ">
+                            <span>🗑️</span> Clear Data
+                        </button>
                     </div>
                 </div>
                 
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                    <div style="color: #3498db; font-weight: bold; margin-bottom: 10px;">📊 Statistics</div>
+                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;">
+                    <div style="color: #3498db; font-weight: bold; margin-bottom: 10px;">📊 Stats</div>
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
                         <div style="padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px;">
-                            <div style="color: #95a5a6; font-size: 10px;">Intercepted Calls</div>
+                            <div style="color: #95a5a6; font-size: 10px;">Calls</div>
                             <div style="color: #ecf0f1; font-size: 16px; font-weight: bold;">${g.api?.calls || 0}</div>
                         </div>
                         <div style="padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px;">
-                            <div style="color: #95a5a6; font-size: 10px;">Last Update</div>
+                            <div style="color: #95a5a6; font-size: 10px;">Last</div>
                             <div style="color: #ecf0f1; font-size: 12px;">${g.lastUp ? t.timeAgo(g.lastUp) : 'Never'}</div>
                         </div>
                         <div style="padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px;">
@@ -495,38 +484,29 @@ const DegenUI = (function () {
                         </div>
                     </div>
                 </div>
-                
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px;">
-                    <div style="color: #3498db; font-weight: bold; margin-bottom: 10px;">⚙️ System</div>
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <div style="color: #ecf0f1; font-size: 11px;">Auto Save</div>
-                            <div style="color: ${t.CFG.autoSave ? '#2ecc71' : '#e74c3c'}; font-size: 11px; font-weight: bold;">
-                                ${t.CFG.autoSave ? 'ON' : 'OFF'}
-                            </div>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                            <div style="color: #ecf0f1; font-size: 11px;">Data Points</div>
-                            <div style="color: #3498db; font-size: 11px; font-weight: bold;">${g.hist?.length || 0}</div>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
-                            <div style="color: #ecf0f1; font-size: 11px;">Version</div>
-                            <div style="color: #f1c40f; font-size: 11px; font-weight: bold;">v${g.ver || '0.5.0'}</div>
-                        </div>
-                    </div>
-                </div>
             </div>
         `;
     }
-
+    
     function setupEvents() {
         document.addEventListener('click', (e) => {
-            if (e.target.closest && e.target.closest('[onclick]')) {
-                return;
+            const btn = e.target.closest('[data-action]');
+            if (!btn) return;
+            
+            const action = btn.getAttribute('data-action');
+            
+            if (action === 'extract' && t.data && t.data.extractPageData) {
+                t.data.extractPageData();
+            } else if (action === 'test' && t.api && t.api.test) {
+                t.api.test();
+            } else if (action === 'clear' && t.data && t.data.clear) {
+                if (confirm('Clear all data?')) {
+                    t.data.clear();
+                }
             }
         });
     }
-
+    
     function addStyles() {
         const style = document.createElement('style');
         style.id = 'degen-styles';
@@ -549,21 +529,16 @@ const DegenUI = (function () {
             .degen-tab:hover {
                 background-color: rgba(52, 152, 219, 0.1) !important;
             }
-            
-            button:hover {
-                transform: translateY(-1px);
-                transition: transform 0.2s;
-            }
         `;
         document.head.appendChild(style);
     }
-
+    
     function updateInd() {
         const ind = document.getElementById('degen-ind');
         if (!ind) return;
-
+        
         const g = t.game || {};
-
+        
         if (g.lastUp) {
             ind.style.display = 'block';
             const since = Date.now() - g.lastUp;
@@ -574,23 +549,23 @@ const DegenUI = (function () {
             ind.style.display = 'none';
         }
     }
-
+    
     function update() {
         if (ov && ov.style.display === 'block') {
             updateTab(curTab);
             updateInd();
         }
     }
-
-    mod.toggle = function () {
+    
+    mod.toggle = function() {
         if (!ov) return;
-
+        
         if (ov.style.display === 'none' || !ov.style.display) {
             ov.style.display = 'block';
             const floatBtn = document.getElementById('degen-toggle');
             if (floatBtn) floatBtn.style.right = '470px';
             update();
-
+            
             const intBtn = document.getElementById('degen-btn');
             if (intBtn) {
                 intBtn.classList.add('bg-[#252B3B]', 'text-white');
@@ -600,7 +575,7 @@ const DegenUI = (function () {
             ov.style.display = 'none';
             const floatBtn = document.getElementById('degen-toggle');
             if (floatBtn) floatBtn.style.right = '10px';
-
+            
             const intBtn = document.getElementById('degen-btn');
             if (intBtn) {
                 intBtn.classList.remove('bg-[#252B3B]', 'text-white');
@@ -608,7 +583,7 @@ const DegenUI = (function () {
             }
         }
     };
-
+    
     window.DegenUI = mod;
     return mod;
 })();
