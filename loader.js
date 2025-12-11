@@ -16,27 +16,36 @@
 // @require      https://raw.githubusercontent.com/dotArk/DegenIdleTracker/main/ui.js
 // ==/UserScript==
 
-(function () {
+(function() {
     'use strict';
+
+    function init() {
+        if (typeof DegenTracker !== 'undefined' &&
+            typeof DegenData !== 'undefined' &&
+            typeof DegenUI !== 'undefined' &&
+            typeof DegenAPI !== 'undefined') {
+
+            console.log('✅ All Degen Tracker modules loaded');
+            DegenTracker.init();
+
+            window.DegenTracker = DegenTracker;
+
+        } else {
+            setTimeout(init, 100);
+        }
+    }
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
-        setTimeout(init, 1000);
+        init();
     }
 
-    function init() {
-        if (typeof DegenTracker !== 'undefined') {
-            DegenTracker.init();
+    window.toggleDegenTracker = function() {
+        if (typeof DegenTracker !== 'undefined' && DegenTracker.toggle) {
+            DegenTracker.toggle();
         } else {
-            console.error('Degen Tracker modules not loaded properly');
-            setTimeout(init, 1000);
-        }
-    }
-
-    window.toggleDegenTracker = function () {
-        if (typeof DegenTracker !== 'undefined') {
-            DegenTracker.toggleOverlay();
+            console.log('⚠️ Degen Tracker not ready yet');
         }
     };
 })();
