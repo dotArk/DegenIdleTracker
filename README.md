@@ -1,0 +1,2 @@
+# DegenIdleTracker
+Degen Idle Tracker
