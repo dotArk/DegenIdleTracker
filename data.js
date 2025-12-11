@@ -83,28 +83,6 @@ const DegenData = (function () {
         return g;
     };
 
-    mod.forceCollect = async function () {
-        t.log('Force collecting...');
-
-        try {
-            const page = findPageData();
-            if (page.char) g.char = page.char;
-
-            await tryDirectAPI();
-
-            g.lastUp = Date.now();
-            g.ts = Date.now();
-
-            mod.save();
-            t.notify('Data collected', 'success');
-            return true;
-        } catch (err) {
-            t.log('Collect failed:', err);
-            t.notify('Collect failed', 'error');
-            return false;
-        }
-    };
-
     function findPageData() {
         const data = { char: null, skills: null, tasks: null };
 
@@ -129,11 +107,6 @@ const DegenData = (function () {
         }
 
         return data;
-    }
-
-    async function tryDirectAPI() {
-        t.log('Trying direct API...');
-        // testing
     }
 
     mod.process = function (url, data) {
