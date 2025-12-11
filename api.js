@@ -1,89 +1,73 @@
-console.log('🔧 API.JS IS LOADING');
-
 const DegenAPI = (function() {
     'use strict';
     
-    const mod = {};
+    const m = {};
     let t = null;
-    const API_ROOT = "https://api.degenidle.com/api/";
+    const R = "https://api.degenidle.com/api/";
     
-    mod.init = function(tracker) {
+    m.init = function(tracker) {
         t = tracker;
         setup();
+        t.log('API ready');
     };
     
     function setup() {
-        t.log('Setting up API interception (XP Tracker pattern)...');
-        
-        // 1. Hook fetch (correct pattern)
-        const origFetch = window.fetch;
-        window.fetch = async function(input, init) {
-            const response = await origFetch.apply(this, arguments);
+        const of = window.fetch;
+        window.fetch = async function(i, init) {
+            const r = await of.apply(this, arguments);
+            const u = (typeof i === 'string') ? i : (i?.url || '');
             
-            try {
-                const url = (typeof input === 'string') ? input : (input?.url || '');
-                
-                if (url.startsWith(API_ROOT)) {
-                    const clone = response.clone();
-                    clone.json()
-                        .then(json => {
-                            t.log(`Fetch response: ${url}`);
-                            if (t.data && t.data.process) {
-                                t.data.process(url, json);
-                            }
-                        })
-                        .catch(() => {});
-                }
-            } catch(e) {}
-            
-            return response;
+            if (u && u.includes('api.degenidle.com')) {
+                const c = r.clone();
+                try {
+                    const d = await c.json();
+                    if (d && t.data && t.data.process) {
+                        t.data.process(u, d);
+                    }
+                } catch(e) {}
+            }
+            return r;
         };
         
-        // 2. Hook XMLHttpRequest (XP Tracker pattern)
-        (function() {
-            const XHR = XMLHttpRequest;
+        const oX = window.XMLHttpRequest;
+        function nX() {
+            const x = new oX();
+            const oO = x.open;
+            x.open = function(m, u, a, user, pass) {
+                this._u = u;
+                return oO.call(this, m, u, a, user, pass);
+            };
             
-            function newXHR() {
-                const realXHR = new XHR();
-                
-                realXHR.addEventListener('readystatechange', function() {
-                    try {
-                        if (realXHR.readyState === 4 && realXHR.responseURL?.startsWith(API_ROOT)) {
+            const oS = x.send;
+            x.send = function(b) {
+                if (this._u && this._u.includes('api.degenidle.com')) {
+                    this.addEventListener('load', function() {
+                        if (this.status >= 200 && this.status < 300 && this.responseText) {
                             try {
-                                const json = JSON.parse(realXHR.responseText);
-                                t.log(`XHR response: ${realXHR.responseURL}`);
-                                if (t.data && t.data.process) {
-                                    t.data.process(realXHR.responseURL, json);
+                                const d = JSON.parse(this.responseText);
+                                if (d && t.data && t.data.process) {
+                                    t.data.process(this._u, d);
                                 }
-                            } catch(e) {
-                                // Not JSON
-                            }
+                            } catch(e) {}
                         }
-                    } catch(e) {}
-                }, false);
-                
-                return realXHR;
-            }
-            
-            newXHR.prototype = XHR.prototype;
-            window.XMLHttpRequest = newXHR;
-        })();
-        
-        t.log('API interception ready');
+                    }, false);
+                }
+                return oS.call(this, b);
+            };
+            return x;
+        }
+        nX.prototype = oX.prototype;
+        window.XMLHttpRequest = nX;
     }
     
-    mod.test = function() {
-        t.log('Testing interception');
-        t.notify('Testing', 'info');
-        
-        if (t.game) {
-            t.game.api.last = Date.now();
-            t.notify('Active', 'success');
-        }
-        
+    m.test = function() {
+        fetch('https://api.degenidle.com/api/heartbeat/status')
+            .then(r => r.json())
+            .then(d => t.log('Test OK:', d.success))
+            .catch(e => t.log('Test fail:', e));
         return true;
     };
     
-    window.DegenAPI = mod;
-    return mod;
+    window.DegenAPI = m;
+    return m;
 })();
