@@ -1,3 +1,5 @@
+console.log('🔧 API.JS IS LOADING');
+
 const DegenAPI = (function() {
     'use strict';
     
