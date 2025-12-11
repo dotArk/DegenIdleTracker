@@ -109,17 +109,17 @@ const DegenData = (function () {
         return data;
     }
 
-    mod.process = function (url, data) {
+    mod.process = function(url, data) {
         if (!data) return;
-
+        
         t.log(`Processing: ${url}`);
-
+        
         const endpoint = url.replace('https://api.degenidle.com/api/', '').split('?')[0] || url;
         g.raw[endpoint] = data;
-
+        
         g.api.calls++;
         g.api.last = Date.now();
-
+        
         try {
             if (url.includes('/characters/')) {
                 let char = null;
@@ -127,18 +127,18 @@ const DegenData = (function () {
                 else if (data.character) char = data.character;
                 else if (data.data) char = data.data;
                 else char = data;
-
+                
                 if (char && (char.id || char.name)) {
                     g.char = { ...g.char, ...char };
                 }
             }
-
+            
             if (url.includes('/skills')) {
                 if (data.data && data.data.skills) g.skills = data.data.skills;
                 else if (data.skills) g.skills = data.skills;
                 else g.skills = data;
             }
-
+            
             if (url.includes('/tasks/') || url.includes('/quests/')) {
                 let tasks = [];
                 if (data.data && Array.isArray(data.data)) tasks = data.data;
@@ -146,10 +146,10 @@ const DegenData = (function () {
                 else if (data.tasks) tasks = data.tasks;
                 else if (data.data && data.data.tasks) tasks = data.data.tasks;
                 else if (data) tasks = [data];
-
+                
                 g.tasks = tasks.filter(t => t && (t.progress !== undefined || t.desc || t.item_name));
             }
-
+            
             if (url.includes('/combat/') || url.includes('/idle-combat/')) {
                 g.combat = {
                     active: data.in_combat || data.active || data.data?.in_combat || false,
@@ -158,7 +158,7 @@ const DegenData = (function () {
                     monster: data.current_monster || data.monster || data.data?.current_monster
                 };
             }
-
+            
             if (url.includes('/guilds/')) {
                 if (data.data && data.data.guild) {
                     g.guild.info = data.data.guild;
@@ -172,7 +172,6 @@ const DegenData = (function () {
                 }
             }
         } catch (err) {
-            t.log('Process error:', err);
             g.api.errs++;
         }
 
