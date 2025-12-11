@@ -2,8 +2,8 @@ const DegenData = (function () {
     'use strict';
 
     const mod = {};
-    let t = null; // tracker reference
-    let g = null; // game data
+    let t = null;
+    let g = null;
 
     mod.init = function (tracker) {
         t = tracker;
@@ -83,34 +83,8 @@ const DegenData = (function () {
         return g;
     };
 
-    function findPageData() {
-        const data = { char: null, skills: null, tasks: null };
-
-        try {
-            const scripts = document.querySelectorAll('script');
-            scripts.forEach(script => {
-                const text = script.textContent;
-                if (text.includes('character') || text.includes('player')) {
-                    const matches = text.match(/\{.*\}/g);
-                    if (matches) {
-                        matches.forEach(match => {
-                            try {
-                                const json = JSON.parse(match);
-                                if (json.name || json.level) data.char = json;
-                            } catch (e) { }
-                        });
-                    }
-                }
-            });
-        } catch (err) {
-            t.log('Page data error:', err);
-        }
-
-        return data;
-    }
-
     mod.process = function(url, data) {
-        if (!data) return;
+        if (!data || !data.success) return;
         
         t.log(`Processing: ${url}`);
         
@@ -121,22 +95,46 @@ const DegenData = (function () {
         g.api.last = Date.now();
         
         try {
-            if (url.includes('/characters/')) {
-                let char = null;
-                if (data.data && data.data.character) char = data.data.character;
-                else if (data.character) char = data.character;
-                else if (data.data) char = data.data;
-                else char = data;
-                
-                if (char && (char.id || char.name)) {
-                    g.char = { ...g.char, ...char };
+            if (url.includes('/characters/account/active')) {
+                if (data.active_characters) {
+                    g.chars = data.active_characters;
+                    if (!g.char && data.active_characters.length > 0) {
+                        g.char = {
+                            character_id: data.active_characters[0].character_id,
+                            task_id: data.active_characters[0].task_id
+                        };
+                    }
                 }
             }
             
-            if (url.includes('/skills')) {
-                if (data.data && data.data.skills) g.skills = data.data.skills;
-                else if (data.skills) g.skills = data.skills;
-                else g.skills = data;
+            if (url.includes('/characters/') && !url.includes('account/active')) {
+                let charData = null;
+                
+                if (data.character) charData = data.character;
+                else if (data.data && data.data.character) charData = data.data.character;
+                else if (data.data) charData = data.data;
+                else if (data.name || data.level) charData = data;
+                
+                if (charData) {
+                    g.char = { ...g.char, ...charData };
+                }
+            }
+            
+            if (url.includes('/guilds/character/')) {
+                if (data.guild) {
+                    g.guild.info = data.guild;
+                    g.guild.members = data.members || [];
+                }
+            }
+            
+            if (url.includes('/guilds/') && !url.includes('/character/')) {
+                if (data.data && data.data.guild) {
+                    g.guild.info = data.data.guild;
+                    g.guild.members = data.data.members || [];
+                } else if (data.guild) {
+                    g.guild.info = data.guild;
+                    g.guild.members = data.members || [];
+                }
             }
             
             if (url.includes('/tasks/') || url.includes('/quests/')) {
@@ -147,7 +145,7 @@ const DegenData = (function () {
                 else if (data.data && data.data.tasks) tasks = data.data.tasks;
                 else if (data) tasks = [data];
                 
-                g.tasks = tasks.filter(t => t && (t.progress !== undefined || t.desc || t.item_name));
+                g.tasks = tasks.filter(task => task && (task.progress !== undefined || task.desc || task.item_name));
             }
             
             if (url.includes('/combat/') || url.includes('/idle-combat/')) {
@@ -159,23 +157,38 @@ const DegenData = (function () {
                 };
             }
             
-            if (url.includes('/guilds/')) {
-                if (data.data && data.data.guild) {
-                    g.guild.info = data.data.guild;
-                    g.guild.members = data.data.members || [];
-                } else if (data.guild) {
-                    g.guild.info = data.guild;
-                    g.guild.members = data.members || [];
-                } else if (data.name) {
-                    g.guild.info = data;
-                    g.guild.members = data.members || [];
-                }
+            if (url.includes('/skills')) {
+                if (data.data && data.data.skills) g.skills = data.data.skills;
+                else if (data.skills) g.skills = data.skills;
+                else g.skills = data;
+            }
+            
+            if (url.includes('/daily-rewards/')) {
+                if (data.data) g.daily = data.data;
+                else g.daily = data;
+            }
+            
+            if (url.includes('/heartbeat/')) {
+                if (data.data) g.heartbeat = data.data;
+                else g.heartbeat = data;
+            }
+            
+            if (url.includes('/announcements')) {
+                if (data.data) g.announcements = data.data;
+                else if (data.announcements) g.announcements = data.announcements;
+                else g.announcements = data;
+            }
+            
+            if (url.includes('/vote/') || url.includes('/polls')) {
+                if (data.data) g.polls = data.data;
+                else if (data.polls) g.polls = data.polls;
+                else g.polls = data;
             }
         } catch (err) {
             g.api.errs++;
+            t.log('Data processing error:', err);
         }
 
-        // History
         g.hist.unshift({
             ts: Date.now(),
             endpoint: endpoint,
