@@ -8,63 +8,58 @@ const DegenAPI = (function() {
         t = tracker;
         setup();
     };
-
+    
     function setup() {
-        const origFetch = window.fetch;
-        window.fetch = async function(...args) {
-            const [url, opts] = args;
-            const urlStr = url.toString();
-            
-            if (urlStr.includes('api.degenidle.com')) {
-                t.log(`Intercepting: ${urlStr}`);
-                
-                try {
-                    const resp = await origFetch.apply(this, args);
-                    const clone = resp.clone();
-                    
-                    try {
-                        const data = await clone.json();
-                        if (t.data && t.data.process) {
-                            t.data.process(urlStr, data);
-                        }
-                    } catch (e) {}
-                    
-                    return resp;
-                } catch (err) {
-                    return origFetch.apply(this, args);
-                }
-            }
-            
-            return origFetch.apply(this, args);
-        };
-
+        t.log('Setting up XHR interception...');
+        
         const origXHR = window.XMLHttpRequest;
-        window.XMLHttpRequest = class extends origXHR {
-            open(method, url, async = true, user, pass) {
-                this._url = url;
-                super.open(method, url, async, user, pass);
-            }
+        window.XMLHttpRequest = function() {
+            const xhr = new origXHR();
+            const origOpen = xhr.open;
+            const origSend = xhr.send;
             
-            send(body) {
+            xhr.open = function(method, url, async, user, password) {
+                this._method = method;
+                this._url = url;
+                t.log(`XHR open: ${method} ${url}`);
+                return origOpen.call(this, method, url, async || true, user, password);
+            };
+            
+            xhr.send = function(body) {
                 if (this._url && this._url.includes('api.degenidle.com')) {
-                    const origReady = this.onreadystatechange;
-                    this.onreadystatechange = function() {
-                        if (this.readyState === 4 && this.status >= 200 && this.status < 300) {
+                    t.log(`XHR send to: ${this._url}`);
+                    
+                    const origOnReadyStateChange = this.onreadystatechange;
+                    const origOnLoad = this.onload;
+                    
+                    this.addEventListener('load', function() {
+                        if (this.status >= 200 && this.status < 300) {
                             try {
-                                const data = JSON.parse(this.responseText);
-                                if (t.data && t.data.process) {
-                                    t.data.process(this._url, data);
+                                if (this.responseText) {
+                                    const data = JSON.parse(this.responseText);
+                                    t.log(`XHR response from: ${this._url}`);
+                                    if (t.data && t.data.process) {
+                                        t.data.process(this._url, data);
+                                    }
                                 }
-                            } catch (e) {}
+                            } catch(e) {}
                         }
-                        if (origReady) origReady.apply(this, arguments);
-                    };
+                    });
+                    
+                    this.addEventListener('error', function() {
+                        t.log(`XHR error: ${this._url}`);
+                    });
                 }
-                super.send(body);
-            }
+                
+                return origSend.call(this, body);
+            };
+            
+            return xhr;
         };
+        
+        t.log('XHR interception ready');
     }
-
+    
     mod.test = function() {
         t.log('Testing interception');
         t.notify('Testing', 'info');
