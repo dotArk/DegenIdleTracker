@@ -3,78 +3,68 @@ const DegenAPI = (function() {
     
     const m = {};
     let t = null;
-    const R = "https://api.degenidle.com/api/";
     
     m.init = function(tracker) {
         t = tracker;
-        console.log('🔧 API init - tracker:', !!t, 't.data:', !!(t && t.data));
+        console.log('🔧 API module initializing');
         
-        setTimeout(() => {
-            console.log('🔧 Delayed setup - t.data:', !!(t && t.data));
-            setup();
-        }, 100);
-    };
-    
-    function proc(u, d) {
-        console.log('🔧 Proc called - u:', u, 't:', !!t, 't.data:', !!(t && t.data));
-        if (t && t.data && typeof t.data.process === 'function') {
-            console.log('✅ Calling t.data.process');
-            t.data.process(u, d);
-        } else {
-            console.log('❌ Cannot process: t.data.process not available');
-        }
-    }
-    
-    function setup() {
-        console.log('🔧 Setting up intercept...');
-        
-        const of = window.fetch;
-        window.fetch = async function(i, init) {
-            const r = await of.apply(this, arguments);
-            const u = (typeof i === 'string') ? i : (i?.url || '');
+        // SETUP FETCH INTERCEPTION
+        const origFetch = window.fetch;
+        window.fetch = async function(...args) {
+            const response = await origFetch.apply(this, args);
+            const url = args[0]?.url || args[0];
             
-            if (u && u.includes('api.degenidle.com')) {
-                console.log('🌐 Fetch:', u);
-                const c = r.clone();
+            if (url && url.includes('api.degenidle.com')) {
+                console.log('🌐 Fetch to API:', url);
+                const clone = response.clone();
                 try {
-                    const d = await c.json();
-                    proc(u, d);
+                    const data = await clone.json();
+                    if (data && t.data && t.data.process) {
+                        console.log('📊 Processing fetch data');
+                        t.data.process(url, data);
+                    }
                 } catch(e) {}
             }
-            return r;
+            return response;
         };
         
-        const oX = window.XMLHttpRequest;
-        function nX() {
-            const x = new oX();
-            const oO = x.open;
-            x.open = function(m, u, a, user, pass) {
-                this._u = u;
-                return oO.call(this, m, u, a, user, pass);
+        // SETUP XHR INTERCEPTION  
+        const OrigXHR = window.XMLHttpRequest;
+        function NewXHR() {
+            const xhr = new OrigXHR();
+            const origOpen = xhr.open;
+            const origSend = xhr.send;
+            
+            xhr.open = function(method, url) {
+                this._url = url;
+                return origOpen.apply(this, arguments);
             };
             
-            const oS = x.send;
-            x.send = function(b) {
-                if (this._u && this._u.includes('api.degenidle.com')) {
-                    console.log('📤 XHR:', this._u);
+            xhr.send = function(body) {
+                if (this._url && this._url.includes('api.degenidle.com')) {
+                    console.log('📤 XHR to API:', this._url);
                     this.addEventListener('load', function() {
-                        if (this.status >= 200 && this.status < 300 && this.responseText) {
+                        if (this.status === 200 && this.responseText) {
                             try {
-                                const d = JSON.parse(this.responseText);
-                                proc(this._u, d);
+                                const data = JSON.parse(this.responseText);
+                                if (data && t.data && t.data.process) {
+                                    console.log('📊 Processing XHR data');
+                                    t.data.process(this._url, data);
+                                }
                             } catch(e) {}
                         }
-                    }, false);
+                    });
                 }
-                return oS.call(this, b);
+                return origSend.apply(this, arguments);
             };
-            return x;
+            
+            return xhr;
         }
-        nX.prototype = oX.prototype;
-        window.XMLHttpRequest = nX;
+        NewXHR.prototype = OrigXHR.prototype;
+        window.XMLHttpRequest = NewXHR;
         
-        console.log('✅ Intercept ready');
-    }
+        console.log('✅ API interception ready');
+    };
     
     window.DegenAPI = m;
     return m;
